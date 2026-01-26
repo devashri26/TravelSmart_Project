@@ -1,0 +1,133 @@
+﻿import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plane, Hotel, Train, Bus, Search, Calendar, Users, MapPin } from 'lucide-react';
+import Navbar from '../components/Layout/Navbar';
+
+const LandingPage = () => {
+  const [activeTab, setActiveTab] = useState('flights');
+  const navigate = useNavigate();
+
+  const handleSearch = () => {
+    navigate(`/${activeTab}`);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900">
+      <Navbar />
+      
+      <div className="max-w-7xl mx-auto px-4 py-20">
+        <div className="text-center mb-12">
+          <h1 className="text-6xl font-black text-white mb-6">
+            India's Leading Travel Company
+          </h1>
+          <p className="text-2xl text-blue-100 mb-8">
+            Book Flights, Hotels, Trains & Buses. Get Best Deals & Offers.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-5xl mx-auto">
+          <div className="flex gap-4 mb-8">
+            <button 
+              onClick={() => setActiveTab('flights')}
+              className={activeTab === 'flights' ? 'flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold' : 'flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200'}
+            >
+              <Plane className="w-5 h-5" />
+              Flights
+            </button>
+            <button 
+              onClick={() => setActiveTab('hotels')}
+              className={activeTab === 'hotels' ? 'flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold' : 'flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200'}
+            >
+              <Hotel className="w-5 h-5" />
+              Hotels
+            </button>
+            <button 
+              onClick={() => setActiveTab('trains')}
+              className={activeTab === 'trains' ? 'flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold' : 'flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200'}
+            >
+              <Train className="w-5 h-5" />
+              Trains
+            </button>
+            <button 
+              onClick={() => setActiveTab('buses')}
+              className={activeTab === 'buses' ? 'flex items-center gap-2 px-6 py-3 bg-orange-600 text-white rounded-lg font-semibold' : 'flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200'}
+            >
+              <Bus className="w-5 h-5" />
+              Buses
+            </button>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-4 mb-6">
+            <div className="relative">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">FROM</label>
+              <MapPin className="absolute left-3 top-10 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Delhi"
+                className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="relative">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">TO</label>
+              <MapPin className="absolute left-3 top-10 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Mumbai"
+                className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="relative">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">DATE</label>
+              <Calendar className="absolute left-3 top-10 w-5 h-5 text-gray-400" />
+              <input
+                type="date"
+                className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="relative">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">TRAVELERS</label>
+              <Users className="absolute left-3 top-10 w-5 h-5 text-gray-400" />
+              <select className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">
+                <option>1 Traveler</option>
+                <option>2 Travelers</option>
+                <option>3 Travelers</option>
+                <option>4 Travelers</option>
+              </select>
+            </div>
+          </div>
+
+          <button
+            onClick={handleSearch}
+            className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-bold text-lg hover:shadow-xl transition flex items-center justify-center gap-2"
+          >
+            <Search className="w-6 h-6" />
+            SEARCH {activeTab.toUpperCase()}
+          </button>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-8 mt-16">
+          <div 
+            onClick={() => navigate('/trip-planner')}
+            className="bg-white/10 backdrop-blur-sm rounded-xl p-8 text-white hover:bg-white/20 transition cursor-pointer"
+          >
+            <h3 className="text-2xl font-bold mb-4">Smart Trip Planner</h3>
+            <p className="text-blue-100">AI-powered itinerary planning</p>
+          </div>
+          <div 
+            onClick={() => navigate('/dashboard')}
+            className="bg-white/10 backdrop-blur-sm rounded-xl p-8 text-white hover:bg-white/20 transition cursor-pointer"
+          >
+            <h3 className="text-2xl font-bold mb-4">My Dashboard</h3>
+            <p className="text-blue-100">Manage bookings and wallet</p>
+          </div>
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 text-white hover:bg-white/20 transition cursor-pointer">
+            <h3 className="text-2xl font-bold mb-4">24/7 Support</h3>
+            <p className="text-blue-100">Get instant help</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default LandingPage;

@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  travelsmart-prod:
+    image: devagauri/travelsmart:latest
+    container_name: travelsmart-prod
+    ports:
+      - "8080:8080"   # Backend API
+      - "5173:5173"   # Frontend
+    environment:
+      - SPRING_PROFILES_ACTIVE=production
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=travelsmartdb_prod
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=86400000
+      - EMAIL_USERNAME=${EMAIL_USERNAME}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - AVIATION_STACK_API_KEY=${AVIATION_STACK_API_KEY}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+    volumes:
+      - prod_mysql_data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - prod-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  prod_mysql_data:
+
+networks:
+  prod-network:
+    driver: bridge

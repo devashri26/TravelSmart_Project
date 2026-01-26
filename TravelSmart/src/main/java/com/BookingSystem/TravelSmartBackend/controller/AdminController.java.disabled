@@ -1,0 +1,355 @@
+package com.BookingSystem.TravelSmartBackend.controller;
+
+import com.BookingSystem.TravelSmartBackend.dto.*;
+import com.BookingSystem.TravelSmartBackend.model.*;
+import com.BookingSystem.TravelSmartBackend.service.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/v1/admin")
+@RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
+public class AdminController {
+
+    private final BookingService bookingService;
+    private final PaymentService paymentService;
+    private final FlightService flightService;
+    private final HotelService hotelService;
+    private final BusService busService;
+    private final TrainService trainService;
+
+    // ==================== DASHBOARD ====================
+    
+    @GetMapping("/dashboard/stats")
+    public ResponseEntity<Map<String, Object>> getDashboardStats() {
+        Map<String, Object> stats = new HashMap<>();
+        
+        // Get statistics from services
+        stats.put("totalBookings", bookingService.getTotalBookings());
+        stats.put("todayBookings", bookingService.getTodayBookings());
+        stats.put("totalRevenue", paymentService.getTotalRevenue());
+        stats.put("todayRevenue", paymentService.getTodayRevenue());
+        stats.put("totalUsers", bookingService.getTotalUsers());
+        stats.put("activeUsers", bookingService.getActiveUsers());
+        stats.put("successRate", paymentService.getSuccessRate());
+        stats.put("pendingRefunds", paymentService.getPendingRefunds());
+        
+        return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/dashboard/recent-bookings")
+    public ResponseEntity<Page<Booking>> getRecentBookings(
+            @RequestParam(defaultValue = "10") int limit) {
+        Pageable pageable = PageRequest.of(0, limit, Sort.by("bookingDate").descending());
+        return ResponseEntity.ok(bookingService.getRecentBookings(pageable));
+    }
+
+    @GetMapping("/dashboard/revenue")
+    public ResponseEntity<Map<String, Object>> getRevenueChart(
+            @RequestParam(defaultValue = "7d") String period) {
+        return ResponseEntity.ok(paymentService.getRevenueByPeriod(period));
+    }
+
+    // ==================== BOOKINGS MANAGEMENT ====================
+    
+    @GetMapping("/bookings")
+    public ResponseEntity<Page<Booking>> getAllBookings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("bookingDate").descending());
+        return ResponseEntity.ok(bookingService.getAllBookings(search, status, pageable));
+    }
+
+    @GetMapping("/bookings/{id}")
+    public ResponseEntity<Booking> getBookingDetails(@PathVariable Long id) {
+        return ResponseEntity.ok(bookingService.getBookingById(id));
+    }
+
+    @PutMapping("/bookings/{id}/cancel")
+    public ResponseEntity<Map<String, String>> cancelBooking(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request) {
+        String reason = request.get("reason");
+        bookingService.cancelBooking(id, reason);
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Booking cancelled successfully");
+        response.put("action", "Seats have been unlocked and restored to inventory");
+        return ResponseEntity.ok(response);
+    }
+    
+    @PostMapping("/bookings/{id}/unlock-seats")
+    public ResponseEntity<Map<String, String>> unlockSeats(@PathVariable Long id) {
+        bookingService.unlockSeats(id);
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Seats unlocked successfully");
+        response.put("bookingId", String.valueOf(id));
+        response.put("action", "Seats have been released and are now available for booking");
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/bookings/{id}/refund")
+    public ResponseEntity<Map<String, String>> processRefund(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> request) {
+        Double amount = ((Number) request.get("amount")).doubleValue();
+        String reason = (String) request.get("reason");
+        
+        paymentService.processRefund(id, amount, reason);
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Refund processed successfully");
+        return ResponseEntity.ok(response);
+    }
+
+    // ==================== PAYMENTS MANAGEMENT ====================
+    
+    @GetMapping("/payments")
+    public ResponseEntity<Page<Payment>> getAllPayments(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String status) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return ResponseEntity.ok(paymentService.getAllPayments(status, pageable));
+    }
+
+    @GetMapping("/payments/{id}")
+    public ResponseEntity<Payment> getPaymentDetails(@PathVariable Long id) {
+        return ResponseEntity.ok(paymentService.getPaymentById(id));
+    }
+
+    @PostMapping("/payments/{id}/refund")
+    public ResponseEntity<Map<String, String>> processPaymentRefund(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> request) {
+        Double amount = ((Number) request.get("amount")).doubleValue();
+        String reason = (String) request.get("reason");
+        
+        paymentService.processPaymentRefund(id, amount, reason);
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Payment refund processed successfully");
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/payments/{id}/logs")
+    public ResponseEntity<Map<String, Object>> getPaymentLogs(@PathVariable Long id) {
+        return ResponseEntity.ok(paymentService.getPaymentLogs(id));
+    }
+
+    // ==================== USERS MANAGEMENT ====================
+    
+    @GetMapping("/users")
+    public ResponseEntity<Page<User>> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        return ResponseEntity.ok(bookingService.getAllUsers(search, pageable));
+    }
+
+    @GetMapping("/users/{id}")
+    public ResponseEntity<User> getUserDetails(@PathVariable Long id) {
+        return ResponseEntity.ok(bookingService.getUserById(id));
+    }
+
+    @PutMapping("/users/{id}/block")
+    public ResponseEntity<Map<String, String>> blockUser(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request) {
+        String reason = request.get("reason");
+        bookingService.blockUser(id, reason);
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "User blocked successfully");
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/users/{id}/unblock")
+    public ResponseEntity<Map<String, String>> unblockUser(@PathVariable Long id) {
+        bookingService.unblockUser(id);
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "User unblocked successfully");
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/users/{id}/reset-password")
+    public ResponseEntity<Map<String, String>> resetUserPassword(@PathVariable Long id) {
+        String newPassword = bookingService.resetUserPassword(id);
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Password reset successfully");
+        response.put("temporaryPassword", newPassword);
+        return ResponseEntity.ok(response);
+    }
+
+    // ==================== FLIGHTS MANAGEMENT ====================
+    
+    @GetMapping("/flights")
+    public ResponseEntity<Page<Flight>> getAllFlights(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("departureTime").descending());
+        return ResponseEntity.ok(flightService.getAllFlights(search, pageable));
+    }
+
+    @GetMapping("/flights/{id}")
+    public ResponseEntity<Flight> getFlightDetails(@PathVariable Long id) {
+        Flight flight = flightService.getFlightById(id)
+                .orElseThrow(() -> new RuntimeException("Flight not found"));
+        return ResponseEntity.ok(flight);
+    }
+
+    @PostMapping("/flights")
+    public ResponseEntity<Flight> createFlight(@RequestBody Flight flight) {
+        return ResponseEntity.ok(flightService.createFlight(flight));
+    }
+
+    @PutMapping("/flights/{id}")
+    public ResponseEntity<Flight> updateFlight(
+            @PathVariable Long id,
+            @RequestBody Flight flight) {
+        return ResponseEntity.ok(flightService.updateFlight(id, flight));
+    }
+
+    @DeleteMapping("/flights/{id}")
+    public ResponseEntity<Map<String, String>> deleteFlight(@PathVariable Long id) {
+        flightService.deleteFlight(id);
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Flight deleted successfully");
+        return ResponseEntity.ok(response);
+    }
+
+    // ==================== HOTELS MANAGEMENT ====================
+    
+    @GetMapping("/hotels")
+    public ResponseEntity<Page<Hotel>> getAllHotels(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
+        return ResponseEntity.ok(hotelService.getAllHotels(search, pageable));
+    }
+
+    @GetMapping("/hotels/{id}")
+    public ResponseEntity<Hotel> getHotelDetails(@PathVariable Long id) {
+        Hotel hotel = hotelService.getHotelById(id)
+                .orElseThrow(() -> new RuntimeException("Hotel not found"));
+        return ResponseEntity.ok(hotel);
+    }
+
+    @PostMapping("/hotels")
+    public ResponseEntity<Hotel> createHotel(@RequestBody Hotel hotel) {
+        return ResponseEntity.ok(hotelService.createHotel(hotel));
+    }
+
+    @PutMapping("/hotels/{id}")
+    public ResponseEntity<Hotel> updateHotel(
+            @PathVariable Long id,
+            @RequestBody Hotel hotel) {
+        return ResponseEntity.ok(hotelService.updateHotel(id, hotel));
+    }
+
+    @DeleteMapping("/hotels/{id}")
+    public ResponseEntity<Map<String, String>> deleteHotel(@PathVariable Long id) {
+        hotelService.deleteHotel(id);
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Hotel deleted successfully");
+        return ResponseEntity.ok(response);
+    }
+
+    // ==================== BUSES MANAGEMENT ====================
+    
+    @GetMapping("/buses")
+    public ResponseEntity<Page<Bus>> getAllBuses(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("departureTime").descending());
+        return ResponseEntity.ok(busService.getAllBuses(search, pageable));
+    }
+
+    @GetMapping("/buses/{id}")
+    public ResponseEntity<Bus> getBusDetails(@PathVariable Long id) {
+        Bus bus = busService.getBusById(id)
+                .orElseThrow(() -> new RuntimeException("Bus not found"));
+        return ResponseEntity.ok(bus);
+    }
+
+    @PostMapping("/buses")
+    public ResponseEntity<Bus> createBus(@RequestBody Bus bus) {
+        return ResponseEntity.ok(busService.createBus(bus));
+    }
+
+    @PutMapping("/buses/{id}")
+    public ResponseEntity<Bus> updateBus(
+            @PathVariable Long id,
+            @RequestBody Bus bus) {
+        return ResponseEntity.ok(busService.updateBus(id, bus));
+    }
+
+    @DeleteMapping("/buses/{id}")
+    public ResponseEntity<Map<String, String>> deleteBus(@PathVariable Long id) {
+        busService.deleteBus(id);
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Bus deleted successfully");
+        return ResponseEntity.ok(response);
+    }
+
+    // ==================== TRAINS MANAGEMENT ====================
+    
+    @GetMapping("/trains")
+    public ResponseEntity<Page<Train>> getAllTrains(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("departureTime").descending());
+        return ResponseEntity.ok(trainService.getAllTrains(search, pageable));
+    }
+
+    @GetMapping("/trains/{id}")
+    public ResponseEntity<Train> getTrainDetails(@PathVariable Long id) {
+        Train train = trainService.getTrainById(id)
+                .orElseThrow(() -> new RuntimeException("Train not found"));
+        return ResponseEntity.ok(train);
+    }
+
+    @PostMapping("/trains")
+    public ResponseEntity<Train> createTrain(@RequestBody Train train) {
+        return ResponseEntity.ok(trainService.createTrain(train));
+    }
+
+    @PutMapping("/trains/{id}")
+    public ResponseEntity<Train> updateTrain(
+            @PathVariable Long id,
+            @RequestBody Train train) {
+        return ResponseEntity.ok(trainService.updateTrain(id, train));
+    }
+
+    @DeleteMapping("/trains/{id}")
+    public ResponseEntity<Map<String, String>> deleteTrain(@PathVariable Long id) {
+        trainService.deleteTrain(id);
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Train deleted successfully");
+        return ResponseEntity.ok(response);
+    }
+}

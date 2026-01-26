@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  travelsmart-staging:
+    image: devagauri/travelsmart:latest
+    container_name: travelsmart-staging
+    ports:
+      - "8087:8080"   # Backend API
+      - "5174:5173"   # Frontend
+    environment:
+      - SPRING_PROFILES_ACTIVE=staging
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=travelsmartdb_staging
+      - JWT_SECRET=staging-secret-key
+      - JWT_EXPIRATION=86400000
+    volumes:
+      - staging_mysql_data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - staging-network
+
+volumes:
+  staging_mysql_data:
+
+networks:
+  staging-network:
+    driver: bridge
