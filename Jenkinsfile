@@ -14,17 +14,11 @@ pipeline {
             }
         }
         
-        stage('Setup') {
-            steps {
-                echo 'Setting up build environment...'
-                sh 'chmod +x TravelSmart/mvnw'
-            }
-        }
-        
         stage('Build Backend') {
             steps {
                 echo 'Building Spring Boot application...'
                 dir('TravelSmart') {
+                    sh 'chmod +x mvnw'
                     sh './mvnw clean compile -DskipTests'
                 }
             }
@@ -34,6 +28,7 @@ pipeline {
             steps {
                 echo 'Running backend tests...'
                 dir('TravelSmart') {
+                    sh 'chmod +x mvnw'
                     sh './mvnw test || true'
                 }
             }
@@ -43,8 +38,17 @@ pipeline {
             steps {
                 echo 'Building React application...'
                 dir('travelsmart-frontend') {
-                    sh 'npm ci'
-                    sh 'npm run build'
+                    script {
+                        // Check if npm is available, if not skip frontend build in Jenkins
+                        def npmExists = sh(script: 'which npm', returnStatus: true) == 0
+                        if (npmExists) {
+                            sh 'npm ci'
+                            sh 'npm run build'
+                        } else {
+                            echo 'npm not found in Jenkins environment - skipping frontend build'
+                            echo 'Frontend will be built during Docker image creation'
+                        }
+                    }
                 }
             }
         }
@@ -53,6 +57,7 @@ pipeline {
             steps {
                 echo 'Packaging Spring Boot application...'
                 dir('TravelSmart') {
+                    sh 'chmod +x mvnw'
                     sh './mvnw package -DskipTests'
                 }
             }
