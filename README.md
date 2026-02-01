@@ -2,6 +2,14 @@
 
 A full-stack travel booking application with Spring Boot backend, React frontend, MySQL database, and complete CI/CD pipeline using Jenkins and Docker.
 
+## 🎉 Project Status
+
+✅ **Complete Full-Stack Application**  
+✅ **Docker Hub Deployment**: [devagauri/travelsmart](https://hub.docker.com/r/devagauri/travelsmart)  
+✅ **GitHub Repository**: [TravelSmart_Project](https://github.com/devashri26/TravelSmart_Project)  
+✅ **CI/CD Pipeline**: Jenkins automation ready  
+✅ **Multi-Environment**: Staging and Production configs  
+
 ## 🚀 Features
 
 ### 🎯 Core Functionality
@@ -37,6 +45,8 @@ A full-stack travel booking application with Spring Boot backend, React frontend
 docker run -d --name travelsmart -p 8080:8080 -p 5173:5173 devagauri/travelsmart:latest
 ```
 
+**Docker Hub Repository**: https://hub.docker.com/r/devagauri/travelsmart
+
 ### Option 2: Build Locally
 ```bash
 git clone https://github.com/devashri26/TravelSmart_Project.git
@@ -50,6 +60,24 @@ docker run -d --name travelsmart -p 8080:8080 -p 5173:5173 travelsmart
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:8080
 - **API Documentation**: http://localhost:8080/swagger-ui.html
+- **Docker Hub**: https://hub.docker.com/r/devagauri/travelsmart
+
+## ⚡ Quick Deploy Commands
+
+```bash
+# Pull and run from Docker Hub
+docker pull devagauri/travelsmart:latest
+docker run -d --name travelsmart -p 8080:8080 -p 5173:5173 devagauri/travelsmart:latest
+
+# Check if running
+docker ps
+
+# View logs
+docker logs travelsmart -f
+
+# Stop and remove
+docker stop travelsmart && docker rm travelsmart
+```
 
 ## 🛠️ Development Setup
 
