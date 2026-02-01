@@ -14,6 +14,13 @@ pipeline {
             }
         }
         
+        stage('Setup') {
+            steps {
+                echo 'Setting up build environment...'
+                sh 'chmod +x TravelSmart/mvnw'
+            }
+        }
+        
         stage('Build Backend') {
             steps {
                 echo 'Building Spring Boot application...'
